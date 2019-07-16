@@ -94,5 +94,7 @@ typings/
 
 # End of https://www.gitignore.io/api/node
 out
+settings.json
+yarn-error.log
 
 package-lock.json

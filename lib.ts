@@ -60,6 +60,7 @@ async function clone(filepath) {
 
 function getOutFileForYAML(config: AxiosRequestConfig[]) {
   // this line here means we choose the first url as the name for the json file in out/XXX.json
+  // TODO validation on yaml scheme
   const baseurl = config[0].url
   const basename = parse(baseurl).hostname
   return path.data(basename)

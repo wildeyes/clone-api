@@ -144,6 +144,7 @@ function clone(filepath) {
 }
 function getOutFileForYAML(config) {
     // this line here means we choose the first url as the name for the json file in out/XXX.json
+    // TODO validation on yaml scheme
     var baseurl = config[0].url;
     var basename = url_parse_1.default(baseurl).hostname;
     return exports.path.data(basename);
