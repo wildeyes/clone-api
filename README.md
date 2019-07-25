@@ -30,3 +30,10 @@ Do you want functionality not yet coded in this package? send me an email and le
 ## buzzwords for seo
 
 This npm package takes an API offline to use. Mirror any API on localhost. Open source software for the commandline for APIs.
+
+- Tasks List
+- Support multiple headers
+- make sure out goes into npm package folder
+- add automatic checking of status codes for each request in the background
+- name versions of the api, and notify when it changed, and whether you want to update to the new version
+-
