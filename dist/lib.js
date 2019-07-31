@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -62,18 +51,20 @@ var yaml = __importStar(require("yaml"));
 var express_1 = __importDefault(require("express"));
 var axios_1 = __importDefault(require("axios"));
 var url_parse_1 = __importDefault(require("url-parse"));
+var mkdirp_promise_1 = __importDefault(require("mkdirp-promise"));
 exports.path = {
-    out: path_1.resolve(process.cwd(), 'out'),
+    out: path_1.resolve(__dirname, 'out'),
     data: function (name) {
         return path_1.resolve(this.out, name + '.json');
     },
 };
+mkdirp_promise_1.default(exports.path.out);
 function start(filepath, port) {
     return __awaiter(this, void 0, void 0, function () {
         function baseurl() {
             return 'http://localhost:' + port;
         }
-        var file, datafile, outfile, endpointData, _a, endpointsAndConfig, app;
+        var file, datafile, outfile, endpointData, _a, app, server;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -89,23 +80,40 @@ function start(filepath, port) {
                     _b.label = 3;
                 case 3:
                     endpointData = _a;
-                    endpointsAndConfig = datafile.map(function (d) { return (__assign({}, d, endpointData.find(function (e) { return e.url === d.url; }))); });
                     app = express_1.default();
-                    endpointsAndConfig.forEach(function (d) {
-                        var url = d.url, data = d.data, _a = d.method, method = _a === void 0 ? 'GET' : _a;
+                    console.log('Setting up endpoints...');
+                    datafile.forEach(function (_a, index) {
+                        var url = _a.url, _b = _a.method, method = _b === void 0 ? 'GET' : _b, headers = _a.headers;
+                        var data = endpointData[index].data;
                         var pathname = url_parse_1.default(url).pathname;
-                        console.log("Loading " + baseurl() + pathname);
-                        app[method.toLowerCase()](pathname, function (req, res) {
+                        console.log("[" + method + "] " + baseurl() + pathname + " " + headersTxt(headers));
+                        app[method.toLowerCase()](pathname, function (req, res, next) {
+                            console.log("Request from client: " + method + " " + url + " " + headersTxt(headers));
+                            if (headers)
+                                for (var _i = 0, _a = Object.entries(headers); _i < _a.length; _i++) {
+                                    var _b = _a[_i], key = _b[0], value = _b[1];
+                                    if (req.headers[key.toLowerCase()] !== value) {
+                                        return next( /* {
+                                          err: 'headers mismatch',
+                                          details: { sentHeaders: req.headers, wantedHeaders: headers },
+                                        } */);
+                                    }
+                                }
                             res.send(data);
                         });
                     });
-                    app.listen(port, function () { return console.log('Running CloneAPI at ' + baseurl()); });
-                    return [2 /*return*/];
+                    server = app.listen(port, function () {
+                        return console.log('Running CloneAPI at ' + baseurl());
+                    });
+                    return [2 /*return*/, { close: server.close.bind(server) }];
             }
         });
     });
 }
 exports.start = start;
+/**
+ * Note: the clone function depends on the order, if the order changes without clearing the cache, it'll fuck things up.
+ */
 function clone(filepath) {
     return __awaiter(this, void 0, void 0, function () {
         var file, datafile, apiData;
@@ -115,19 +123,17 @@ function clone(filepath) {
                 case 0:
                     file = fs.readFileSync(filepath);
                     datafile = yaml.parse(file.toString());
-                    return [4 /*yield*/, Promise.all(datafile.map(function (config) { return __awaiter(_this, void 0, void 0, function () {
-                            var data;
+                    return [4 /*yield*/, Promise.all(datafile.map(function (config, index) { return __awaiter(_this, void 0, void 0, function () {
+                            var url, headers, data;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
-                                        console.log("Requesting " + config.url + "...");
-                                        return [4 /*yield*/, axios_1.default.request(config)
-                                            // right now im diffrentiating requests by url, if we'd like same urls we'll have to think of a different scheme
-                                        ];
+                                        url = config.url, headers = config.headers;
+                                        console.log("Requesting " + url + "...  " + headersTxt(headers));
+                                        return [4 /*yield*/, axios_1.default.request(config)];
                                     case 1:
                                         data = (_a.sent()).data;
-                                        // right now im diffrentiating requests by url, if we'd like same urls we'll have to think of a different scheme
-                                        return [2 /*return*/, { url: config.url, data: data }];
+                                        return [2 /*return*/, { index: index, url: url, data: data }];
                                 }
                             });
                         }); }))
@@ -148,4 +154,14 @@ function getOutFileForYAML(config) {
     var baseurl = config[0].url;
     var basename = url_parse_1.default(baseurl).hostname;
     return exports.path.data(basename);
+}
+function headersTxt(headers) {
+    return headers
+        ? Object.entries(headers)
+            .map(function (_a) {
+            var k = _a[0], v = _a[1];
+            return k + ":" + v;
+        })
+            .join(',')
+        : '';
 }
