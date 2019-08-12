@@ -6,7 +6,7 @@ If you're working with a client that doesn't use staging and the API you depend 
 
 The yaml file scheme is simply an array of (AxiosRequestConfig)[https://github.com/axios/axios#request-config]. A test yaml is provided in the root directory of the project.
 
-## how to use
+## How to use
 
 - `yarn global add clone-api` / `npm i -g clone-api`.
 - `clone-api start ./npm list -g`
@@ -28,6 +28,6 @@ The yaml file scheme is simply an array of (AxiosRequestConfig)[https://github.c
 
 Do you want functionality not yet coded in this package? send me an email and lets pair program on this.
 
-## buzzwords for seo
+## Buzzwords for seo
 
 This npm package takes an API offline to use. Mirror any API on localhost. Open source software for the commandline for APIs.
